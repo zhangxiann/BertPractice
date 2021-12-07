@@ -18,7 +18,8 @@ epochs = 2
 batch_size = 16
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-data_path = "sentiment\\"
+# data_path = "sentiment/" # linux
+data_path = "sentiment\\"  # windows
 vocab_file = data_path+"vocab.txt"               # 词汇表
 train_data = data_path + "sentiment.train.data"  # 训练数据集
 valid_data = data_path + "sentiment.valid.data"  # 验证数据集
@@ -50,7 +51,7 @@ sentiment_valid_loader = DataLoader(sentiment_valid_set, batch_size=batch_size, 
 
 
 # 定义 tokenizer，传入词汇表
-tokenizer = BertTokenizer(data_path+vocab_file)
+tokenizer = BertTokenizer(vocab_file)
 
 
 # 加载模型
@@ -78,7 +79,7 @@ def train(model, dataloader, optimizer, criterion, device):
     epoch_acc = 0
     for i, batch in enumerate(dataloader):
         # 标签形状为 (batch_size, 1)
-        label = batch["label"]
+        label = batch["label"].to(device)
         text = batch["text"]
 
         # tokenized_text 包括 input_ids， token_type_ids， attention_mask
@@ -122,7 +123,7 @@ def evaluate(model, iterator, device):
     epoch_acc = 0
     with torch.no_grad():
         for _, batch in enumerate(iterator):
-            label = batch["label"]
+            label = batch["label"].to(device)
             text = batch["text"]
             tokenized_text = tokenizer(text, max_length=100, add_special_tokens=True, truncation=True, padding=True,
                                        return_tensors="pt")
@@ -146,5 +147,5 @@ def evaluate(model, iterator, device):
 for i in range(epochs):
     train_loss, train_acc = train(model, sentiment_train_loader, optimizer, criterion, device)
     print("train loss: ", train_loss, "\t", "train acc:", train_acc)
-    valid_loss, valid_acc = evaluate(model, sentiment_valid_loader, criterion, device)
+    valid_loss, valid_acc = evaluate(model, sentiment_valid_loader, device)
     print("valid loss: ", valid_loss, "\t", "valid acc:", valid_acc)
